@@ -1,29 +1,48 @@
 version: 2.1
 
 jobs:
-  build: # job name
-    docker: # executor type
-      - image: cimg/base:current # Docker image that installs Docker and has Git,
-    working_directory: ~/app
+  lint-app:
+    docker:
+      - image: circleci/node:13.8.0
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.14
+  build-docker:
+    machine: true
+    steps:
+      - checkout
       - run:
-          name: Install dependencies
-          command: echo "No need to install anything. \n Just build and push the Docker image."
-      - run:
-          name: Build and push Docker image
+          name: Build docker container for each microservices
           command: |
-            echo "Inside the Build and push Docker image step"
-            docker --version # print the version for logging
-            docker-compose -f docker-compose-build.yaml build --parallel
-            docker tag reverseproxy huynguyen2333/reverseproxy:v5
-            docker tag udagram-api-user huynguyen2333/udagram-api-user:v5
-            docker tag udagram-api-feed huynguyen2333/udagram-api-feed:v5
-            docker tag udagram-frontend huynguyen2333/udagram-frontend:v5
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-            docker push huynguyen2333/reverseproxy:v5
-            docker push huynguyen2333/udagram-api-user:v5
-            docker push huynguyen2333/udagram-api-feed:v5
-            docker push huynguyen2333/udagram-frontend:v5
+            echo "--------- The images is Building ------------"
+
+            docker build -t udagram-api-feed ./udagram-api-feed
+            docker tag udagram-api-feed huynguyen2333/udagram-api-feed:latest
+
+            docker build -t udagram-api-user ./udagram-api-user
+            docker tag udagram-api-user huynguyen2333/udagram-api-user:latest
+            
+            docker build -t udagram-frontend ./udagram-frontend
+            docker tag udagram-frontend huynguyen2333/udagram-frontend:latest
+
+            docker build -t udagram-reverseproxy ./udagram-reverseproxy
+            docker tag udagram-reverseproxy huynguyen2333/udagram-reverseproxy:latest
+
+            echo "-------- All images succesfully built----------"
+
+            echo " ------- login in to hub--------"
+
+            docker login -u huynguyen2333 -p $DOCKERPASS
+
+            echo "-------------- Pushing images to dockerhub-------"
+
+            docker push huynguyen2333/udagram-api-feed:latest
+            docker push huynguyen2333/udagram-api-user:latest
+            docker push huynguyen2333/udagram-frontend:latest
+            docker push huynguyen2333/udagram-reverseproxy:latest
+
+workflows:
+  default:
+    jobs:
+      - lint-app
+      - build-docker:
+          requires: [lint-app]
