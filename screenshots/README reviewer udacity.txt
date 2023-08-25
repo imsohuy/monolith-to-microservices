@@ -1,0 +1,1 @@
+I didn't use TravisCi ( it required me to add credit card, which I don't have ) for CI/CD, I use CircleCi for that, so please check the .circleci file. I do the same process in CircleCi and also screenshot of it. Thank you alot :)
